@@ -28,4 +28,4 @@ data$distance<-distance(data$longitude, data$latitude)
 data<-data[data$distance <= 100, c("user_id","name")] 
 
 # Putting the data in ascending order of user id
-data <-data[order(data$user_id),order(data$user_id)]
+data <-data[order(data$user_id),]
