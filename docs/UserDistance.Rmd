@@ -1,0 +1,99 @@
+---
+title: "Users within 100 kms of Dublin office"
+author: "Abhimanyu Hazarika"
+date: "December 16, 2017"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=TRUE}
+library("jsonlite")
+
+```
+
+## Dataset Import
+
+The user data in JSON format, stored in a text file(gistfile1.txt) is imported using the jsonlite library in R
+
+
+```{r retrieveJSON}
+#set the working directory
+setwd("U:/IntercomTest") 
+
+# Retrieving the user data stored in JSON format
+data<-stream_in(file("gistfile1.txt"))
+
+```
+```{r displayData, echo=FALSE}
+data
+
+```
+
+## Degree to Radian conversion
+The latitude and longitude values of users address and Dublin office address are converted into radian using the below function
+
+```{r degree2radian}
+deg2rad <- function(deg) return(deg*pi/180)
+# Converting the user's latitude and longitude from degree to radian
+data$latitude <- deg2rad(as.numeric(data$latitude))
+data$longitude <- deg2rad(as.numeric(data$longitude))
+```
+```{r displayData2, echo=FALSE}
+data
+
+```
+
+## Geo distance calculation
+Using Spherical Law of Cosines, the distance between two coordinates are calculated
+
+```{r distance, echo=TRUE}
+# Function to calculate the geo distance between User's latitude/longitude and Dublin office 
+# using Spherical Law of Cosines
+distance <- function(usrLong, usrLat) {
+  officeLong=deg2rad(-6.257664) #Longitude of Intercom's Dublin office in degree
+  officeLat<-deg2rad(53.339428) #Latitude of Intercom's Dublin office in degree
+  R <- 6371 # Mean radius of Earth
+  dist <- acos(sin(usrLat)*sin(officeLat) + cos(usrLat)*cos(officeLat) * cos(officeLong-usrLong)) * R
+  return(dist) # Returning distance in kms
+}
+```
+
+## Distance of each user from Dublin office
+
+The distacne of each user in the dataset is added to the dataset
+
+```{r column_distance, echo=TRUE}
+# Adding column distance containing distance of the user from Intercom's Dublin office
+data$distance<-distance(data$longitude, data$latitude)
+```
+```{r displayData3, echo=FALSE}
+data
+
+```
+
+## Users within 100 kms of Dublin office
+
+Filtering users who are within 100kms of Intercom's Dublin office. Sorting the list in the ascending  order of User ID.
+
+```{r users100kms, echo=TRUE}
+# Selecting only the user_id and name of the customers who live within 100 kms from Intercom's Dublin office
+data<-data[data$distance <= 100, c("user_id","name")] 
+
+# Putting the data in ascending order of user id
+data <-data[order(data$user_id),]
+```
+```{r displayData4, echo=FALSE}
+data
+
+```
+
+## Export user list to CSV
+
+The CSV file containg the required data is stored in the working directory.
+
+```{r writeCsv, echo=TRUE}
+
+#Export the data into a CSV file
+write.csv(data,file='usersWithin100kms.csv')
+```
